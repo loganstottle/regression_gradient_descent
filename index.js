@@ -9,7 +9,7 @@
 const canvas = document.querySelector("#canv");
 const ctx = canvas.getContext("2d");
 
-const num_data_points = 3;
+const num_data_points = 4;
 const point_x_separation = 1.5;
 const num_curves = 1;
 const degree = 3;
