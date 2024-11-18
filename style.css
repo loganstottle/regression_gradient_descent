@@ -1,0 +1,21 @@
+* {
+    background: #000;
+    color: #fff;
+    font-family: Verdana;
+    user-select: none;
+}
+
+html, body {
+    margin: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+canvas {
+    padding: 5px;
+    border: 1px solid #fff;
+}
