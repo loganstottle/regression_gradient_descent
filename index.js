@@ -79,25 +79,42 @@ const gradient = coeffs => {
     return result;
 }
 
-const constrain = (x, lower, upper) => Math.max(Math.min(x, upper), lower);
-
-const map = function(n, start1, stop1, start2, stop2, withinBounds) {
-    const newval = (n - start1) / (stop1 - start1) * (stop2 - start2) + start2;
-    if (!withinBounds) return newval;
+const translate = (n, w) => {
+    // [-7, 7] -> [0, w]
     
-    if (start2 < stop2) constrain(newval, start2, stop2);
-    else return constrain(newval, stop2, start2);
+    return (n + 7) / 14 * w;
 }
 
-const transform = (x, y) => [map(x, -7, 7, canv.width, 0), map(y, -7, 7, canv.height, 0)];
-const inv_transform = (x, y) => [map(x, canv.width, 0, -7, 7), map(y, canv.height, 0, -7, 7)];
+const inv_translate = (n, w) => {
+    // [0, w] -> [-7, 7]
+
+    return (n / w) * 14 - 7;
+}
+
+const transform = (x, y) => {
+    // x, y [-7, 7] -> [0, 400] (where y is inverted)
+
+    const translated_x = translate(x, canvas.width);
+    const translated_y = canvas.width - translate(y, canvas.height);
+    
+    return [translated_x, translated_y];
+}
+
+const inv_transform = (x, y) => {
+    // x, y [0, 400] -> [-7, 7] (where y is inverted)
+
+    const translated_x = inv_translate(x, canvas.width);
+    const translated_y = -inv_translate(y, canvas.height);
+    
+    return [translated_x, translated_y];
+}
 
 const get_eq = coeffs => {
     let result = "";
 
     for (let i = 0; i < coeffs.length; i++) {
-        const sign = Math.sign(coeffs[i - 1]) == 1 ? "+" : "-";
         const coeff_num = coeffs[i].toFixed(2);
+        const sign = Math.sign(coeff_num) == 1 ? "+" : "-";
 
         if (i == 0) {
             result = `${coeff_num}`;
@@ -120,8 +137,8 @@ const simulation_step = () => {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     ctx.fillStyle = "#333";
-    ctx.fillRect(0, canv.height / 2, canv.width, 1);
-    ctx.fillRect(canv.width / 2, 0, 1, canv.height);
+    ctx.fillRect(0, canvas.height / 2, canvas.width, 1);
+    ctx.fillRect(canvas.width / 2, 0, 1, canvas.height);
     
     for (const coefficients of coefficient_s) {
         
@@ -178,10 +195,10 @@ window.oncontextmenu = e => e.preventDefault();
 
 let dragging = false;
 
-canv.onmousedown = e => {
+canvas.onmousedown = e => {
     e.preventDefault();
     
-    const rect = canv.getBoundingClientRect();
+    const rect = canvas.getBoundingClientRect();
 
     const screen_x = e.clientX - rect.left; 
     const screen_y = e.clientY - rect.top;
@@ -197,11 +214,11 @@ window.onmouseup = e => {
         dragging = false;
 }
 
-canv.onmousemove = e => {
+canvas.onmousemove = e => {
     if (dragging) {
         e.preventDefault();
     
-        const rect = canv.getBoundingClientRect();
+        const rect = canvas.getBoundingClientRect();
 
         const screen_x = e.clientX - rect.left; 
         const screen_y = e.clientY - rect.top;
