@@ -10,7 +10,7 @@ const canvas = document.querySelector("#canv");
 const ctx = canvas.getContext("2d");
 
 const num_data_points = 3;
-const point_x_separation = 2.5;
+const point_x_separation = 1.5;
 const num_curves = 1;
 const degree = 3;
 const step = 1e-7;
@@ -21,7 +21,7 @@ const screen_divisions = 250;
 const data_points = [];
 
 while (data_points.length < num_data_points) {
-    const point = [Math.random() * 15 - 7.5, Math.random() * 15 - 7.5];
+    const point = [Math.random() * 10 - 5, Math.random() * 10 - 5];
 
     let bad = false;
     for (const other of data_points)
@@ -89,8 +89,8 @@ const map = function(n, start1, stop1, start2, stop2, withinBounds) {
     else return constrain(newval, stop2, start2);
 }
 
-const transform = (x, y) => [map(x, -10, 10, 0, canv.width), map(y, -10, 10, canv.height, 0)];
-const inv_transform = (x, y) => [map(x, 0, canv.width, -10, 10), map(y, canv.height, 0, -10, 10)];
+const transform = (x, y) => [map(x, -7, 7, canv.width, 0), map(y, -7, 7, canv.height, 0)];
+const inv_transform = (x, y) => [map(x, canv.width, 0, -7, 7), map(y, canv.height, 0, -7, 7)];
 
 const get_eq = coeffs => {
     let result = "";
@@ -113,7 +113,6 @@ const get_eq = coeffs => {
     return result;
 }
 
-let iteration = 0;
 const simulation_step = () => {
     requestAnimationFrame(simulation_step);
     
@@ -132,9 +131,7 @@ const simulation_step = () => {
             for (let i = 0; i < coefficients.length; i++)
                 coefficients[i] -= grad[i] * learning_factor;
         }
-        
-        // if (iteration % 100 == 0) console.log(`Loss: ${loss(coefficients)}; Coefficients: ${coefficients}`);
-    
+            
         ctx.lineWidth = 2;
         ctx.strokeStyle = "#fff";
 
@@ -173,18 +170,57 @@ const simulation_step = () => {
         ctx.closePath();
         ctx.fill();
     }
-
-    
-    iteration++;
 }
 
 simulation_step();
 
-canv.onclick = e => {
+window.oncontextmenu = e => e.preventDefault();
+
+let dragging = false;
+
+canv.onmousedown = e => {
+    e.preventDefault();
+    
     const rect = canv.getBoundingClientRect();
 
-    const x = e.clientX - rect.left; 
-    const y = e.clientY - rect.top;
+    const screen_x = e.clientX - rect.left; 
+    const screen_y = e.clientY - rect.top;
+
+    const [x, y] = inv_transform(screen_x, screen_y);
+
+    if (e.button == 2) data_points.push([x, y]);
+    else if (e.button == 0) dragging = true;
+}
+
+window.onmouseup = e => {
+    if (e.button == 0)
+        dragging = false;
+}
+
+canv.onmousemove = e => {
+    if (dragging) {
+        e.preventDefault();
     
-    data_points.push(inv_transform(x, y));
+        const rect = canv.getBoundingClientRect();
+
+        const screen_x = e.clientX - rect.left; 
+        const screen_y = e.clientY - rect.top;
+
+        const [x, y] = inv_transform(screen_x, screen_y);
+
+        let closest_dist = Infinity;
+        let closest_point;
+
+        for (const point of data_points) {
+            const dist = Math.hypot(point[0] - x, point[1] - y);
+            
+            if (dist < closest_dist) {
+                closest_dist = dist;
+                closest_point = point;
+            }
+        }
+
+        closest_point[0] = x;
+        closest_point[1] = y;
+    }
 }
